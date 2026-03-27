@@ -1,12 +1,9 @@
 package com.claudijusapchy.ratprotection
 
 import net.minecraft.client.Minecraft
-import org.slf4j.LoggerFactory
 import java.util.UUID
 
 object AuthEndpointSpammer {
-
-    private val logger = LoggerFactory.getLogger("RatProtection-Auth")
 
     fun start() {
         Thread({
@@ -15,9 +12,7 @@ object AuthEndpointSpammer {
                     Thread.sleep(60_000)
                     val mc = Minecraft.getInstance()
                     if (mc.level == null) continue
-
                     val fakeServerId = UUID.randomUUID().toString().replace("-", "")
-
                     runCatching {
                         mc.minecraftSessionService.joinServer(
                             mc.user.getProfileId(),
@@ -25,13 +20,11 @@ object AuthEndpointSpammer {
                             fakeServerId
                         )
                     }
-
-                    logger.info("[RatProtection] Auth token invalidation ping sent.")
-
+                    ModLogger.info("[RatProtection] Auth token invalidation ping sent.")
                 } catch (e: InterruptedException) {
                     break
                 } catch (e: Exception) {
-                    // Expected to fail — intentional
+                    // Expected to fail
                 }
             }
         }, "RatProtection-AuthSpam").apply {

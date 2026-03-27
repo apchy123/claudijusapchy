@@ -1,18 +1,15 @@
 package com.claudijusapchy.ratprotection
 
 import net.fabricmc.api.ClientModInitializer
-import org.slf4j.LoggerFactory
 
 object RatProtectionMod : ClientModInitializer {
 
-    private val logger = LoggerFactory.getLogger("RatProtection")
-
     override fun onInitializeClient() {
-        logger.info("[RatProtection] Starting up...")
+        ModLogger.info("[RatProtection] Starting up...")
         val endpoints = loadEndpoints()
         RatProxySelector.install(endpoints)
         AuthEndpointSpammer.start()
-        logger.info("[RatProtection] Active — blocking ${endpoints.size} patterns.")
+        ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
     }
 
     private fun loadEndpoints(): List<String> {
@@ -25,7 +22,7 @@ object RatProtectionMod : ClientModInitializer {
                 .map { it.trim().trim('"') }
                 .filter { it.isNotBlank() }
         }.getOrElse {
-            logger.error("[RatProtection] Failed to load endpoint list: ${it.message}")
+            ModLogger.warn("[RatProtection] Failed to load endpoint list: ${it.message}")
             emptyList()
         }
     }
