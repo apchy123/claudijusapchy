@@ -23,11 +23,6 @@ public class UserMixin {
         checkCaller("getAccessToken");
     }
 
-    @Inject(method = "getProfileId", at = @At("HEAD"))
-    private void onGetProfileId(CallbackInfoReturnable<java.util.UUID> cir) {
-        checkCaller("getProfileId");
-    }
-
     private void checkCaller(String method) {
         for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
             String cls = frame.getClassName();
