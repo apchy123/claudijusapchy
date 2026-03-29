@@ -1,6 +1,8 @@
 package com.claudijusapchy.ratprotection
 
 import net.fabricmc.api.ClientModInitializer
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 
 object RatProtectionMod : ClientModInitializer {
 
@@ -10,6 +12,22 @@ object RatProtectionMod : ClientModInitializer {
         RatProxySelector.install(endpoints)
         AuthEndpointSpammer.start()
         ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
+
+        ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
+            dispatcher.register(
+                literal("textshadow")
+                    .then(literal("on").executes {
+                        TextShadowConfig.shadowEnabled = true
+                        ModLogger.info("[RatProtection] Text shadow: §aON")
+                        1
+                    })
+                    .then(literal("off").executes {
+                        TextShadowConfig.shadowEnabled = false
+                        ModLogger.info("[RatProtection] Text shadow: §cOFF")
+                        1
+                    })
+            )
+        }
     }
 
     private fun loadEndpoints(): List<String> {

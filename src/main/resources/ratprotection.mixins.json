@@ -3,7 +3,8 @@
   "package": "com.claudijusapchy.ratprotection.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "UserMixin"
+    "UserMixin",
+    "TextShadowMixin"
   ],
   "injectors": {
     "defaultRequire": 1
