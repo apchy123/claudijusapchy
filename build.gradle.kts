@@ -15,6 +15,7 @@ dependencies {
 	modImplementation("net.fabricmc:fabric-loader:0.18.5")
 	modImplementation("net.fabricmc.fabric-api:fabric-api:0.102.0+1.21.1")
 	modImplementation("net.fabricmc:fabric-language-kotlin:1.11.0+kotlin.2.0.0")
+	implementation("com.google.code.gson:gson:2.11.0")
 }
 
 loom {

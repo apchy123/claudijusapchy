@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "UserMixin",
-    "TextShadowMixin"
+    "TextShadowMixin",
+    "ContainerScreenAccessor",
+    "ContainerScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
