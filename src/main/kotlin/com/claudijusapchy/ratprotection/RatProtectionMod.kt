@@ -8,6 +8,9 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import com.mojang.brigadier.arguments.StringArgumentType
+import com.claudijusapchy.ratprotection.gui.ModScreen
+import net.minecraft.client.Minecraft
+val minecraft = Minecraft.getInstance()
 
 object RatProtectionMod : ClientModInitializer {
 
@@ -88,6 +91,12 @@ object RatProtectionMod : ClientModInitializer {
                             1
                         })
                     )
+                    .then(literal("gui").executes {
+                        minecraft.execute {
+                            minecraft.setScreen(ModScreen)
+                        }
+                        1
+                    })
             )
         }
     }
