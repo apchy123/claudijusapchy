@@ -6,7 +6,8 @@
     "UserMixin",
     "TextShadowMixin",
     "ContainerScreenAccessor",
-    "ContainerScreenMixin"
+    "ContainerScreenMixin",
+    "PacketCounterMixin"
   ],
   "injectors": {
     "defaultRequire": 1

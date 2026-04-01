@@ -17,6 +17,9 @@ object ModConfig {
         .resolve("ratprotection.json")
         .toFile()
 
+    var copyLeaderKey: Int = -1
+    var leavePartyKey: Int = -1
+
     fun load() {
         if (!configFile.exists()) {
             save()
@@ -25,7 +28,11 @@ object ModConfig {
         runCatching {
             val json = gson.fromJson(configFile.readText(), JsonObject::class.java)
             TextShadowConfig.shadowEnabled = json.get("shadowEnabled")?.asBoolean ?: true
-            PartyFinderRightClick.mode = json.get("partyFinderMode")?.asInt ?: 0
+            PartyFinderRightClick.enabled = json.get("partyFinderEnabled")?.asBoolean ?: true
+            PartyFinderRightClick.copyLeaderEnabled = json.get("copyLeaderEnabled")?.asBoolean ?: true
+            PartyFinderRightClick.leavePartyEnabled = json.get("leavePartyEnabled")?.asBoolean ?: true
+            copyLeaderKey = json.get("copyLeaderKey")?.asInt ?: -1
+            leavePartyKey = json.get("leavePartyKey")?.asInt ?: -1
             val aliasObj = json.getAsJsonObject("aliases")
             aliasObj?.entrySet()?.forEach { entry ->
                 CommandAliases.aliases[entry.key] = entry.value.asString
@@ -40,7 +47,11 @@ object ModConfig {
         runCatching {
             val json = JsonObject()
             json.addProperty("shadowEnabled", TextShadowConfig.shadowEnabled)
-            json.addProperty("partyFinderMode", PartyFinderRightClick.mode)
+            json.addProperty("partyFinderEnabled", PartyFinderRightClick.enabled)
+            json.addProperty("copyLeaderEnabled", PartyFinderRightClick.copyLeaderEnabled)
+            json.addProperty("leavePartyEnabled", PartyFinderRightClick.leavePartyEnabled)
+            json.addProperty("copyLeaderKey", copyLeaderKey)
+            json.addProperty("leavePartyKey", leavePartyKey)
             val aliasObj = JsonObject()
             CommandAliases.aliases.forEach { (alias, cmd) ->
                 aliasObj.addProperty(alias, cmd)

@@ -2,17 +2,25 @@ package com.claudijusapchy.ratprotection
 
 import com.claudijusapchy.ratprotection.config.ModConfig
 import com.claudijusapchy.ratprotection.features.CommandAliases
+import com.claudijusapchy.ratprotection.features.LagTracker
 import com.claudijusapchy.ratprotection.features.PartyFinderRightClick
+import com.claudijusapchy.ratprotection.gui.ModScreen
+import com.claudijusapchy.ratprotection.mixin.ContainerScreenAccessor
+import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import com.mojang.brigadier.arguments.StringArgumentType
-import com.claudijusapchy.ratprotection.gui.ModScreen
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.client.Minecraft
-val minecraft = Minecraft.getInstance()
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.network.chat.Component
+import org.lwjgl.glfw.GLFW
 
 object RatProtectionMod : ClientModInitializer {
+
+    private val keyWasDown = mutableMapOf<Int, Boolean>()
 
     override fun onInitializeClient() {
         ModLogger.info("[RatProtection] Starting up...")
@@ -23,8 +31,70 @@ object RatProtectionMod : ClientModInitializer {
         AuthEndpointSpammer.start()
         PartyFinderRightClick.init()
         CommandAliases.init()
-
         ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
+
+        ClientTickEvents.END_CLIENT_TICK.register { _ ->
+            LagTracker.tick()
+            val mc = Minecraft.getInstance()
+            val screen = mc.screen
+            if (screen !is AbstractContainerScreen<*>) return@register
+            if (screen.title.string != "Party Finder") return@register
+
+            val window = GLFW.glfwGetCurrentContext()
+
+            val copyKey = ModConfig.copyLeaderKey
+            if (copyKey != -1) {
+                val isDown = PartyFinderRightClick.isKeyDown(window, copyKey)
+                val wasDown = keyWasDown[copyKey] ?: false
+                if (isDown && !wasDown) {
+                    val slot = (screen as ContainerScreenAccessor).hoveredSlot
+                    if (slot != null) PartyFinderRightClick.doCopyLeaderFromSlot(mc, slot)
+                }
+                keyWasDown[copyKey] = isDown
+            }
+
+            val leaveKey = ModConfig.leavePartyKey
+            if (leaveKey != -1) {
+                val isDown = PartyFinderRightClick.isKeyDown(window, leaveKey)
+                val wasDown = keyWasDown[leaveKey] ?: false
+                if (isDown && !wasDown) {
+                    val slot = (screen as ContainerScreenAccessor).hoveredSlot
+                    if (slot != null) PartyFinderRightClick.doLeavePartyFromSlot(mc, slot)
+                }
+                keyWasDown[leaveKey] = isDown
+            }
+        }
+
+        // ---- LAG TRACKER ----
+        ClientReceiveMessageEvents.GAME.register { message, _ ->
+            val text = message.string
+            if (text.contains("WELL! WELL! WELL! LOOK WHO'S HERE!")) {
+                LagTracker.start()
+            }
+
+            if (text.contains("Defeated Maxor, Storm, Goldor, and Necron in")) {
+                val result = LagTracker.stop()
+                if (result != null) {
+                    Thread {
+                        Thread.sleep(1000)
+                        Minecraft.getInstance().execute {
+                            val chat = Minecraft.getInstance().gui.chat
+                            chat.addMessage(Component.literal("§8§m                                        "))
+                            chat.addMessage(Component.literal(result))
+                            chat.addMessage(Component.literal("§8§m                                        "))
+                        }
+                    }.start()
+
+
+                    val mc = Minecraft.getInstance()
+                    mc.gui.chat.addMessage(Component.literal("§8§m                                        "))
+                    mc.gui.chat.addMessage(Component.literal(result))
+                    mc.gui.chat.addMessage(Component.literal("§8§m                                        "))
+
+                }
+            }
+        }
+        // ---------------------
 
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
@@ -40,25 +110,6 @@ object RatProtectionMod : ClientModInitializer {
                             TextShadowConfig.shadowEnabled = false
                             ModConfig.save()
                             ModLogger.info("[RatProtection] Text shadow: §cOFF")
-                            1
-                        })
-                    )
-                    .then(literal("pf")
-                        .then(literal("copyleader").executes {
-                            PartyFinderRightClick.mode = 0
-                            ModConfig.save()
-                            ModLogger.info("[RatProtection] Party Finder mode: §aCopyLeader")
-                            1
-                        })
-                        .then(literal("leaveparty").executes {
-                            PartyFinderRightClick.mode = 1
-                            ModConfig.save()
-                            ModLogger.info("[RatProtection] Party Finder mode: §eLeaveParty")
-                            1
-                        })
-                        .then(literal("mode").executes {
-                            val current = if (PartyFinderRightClick.mode == 0) "§aCopyLeader" else "§eLeaveParty"
-                            ModLogger.info("[RatProtection] Party Finder mode: $current")
                             1
                         })
                     )
@@ -92,11 +143,17 @@ object RatProtectionMod : ClientModInitializer {
                         })
                     )
                     .then(literal("gui").executes {
-                        minecraft.execute {
-                            minecraft.setScreen(ModScreen)
+                    val mc = Minecraft.getInstance()
+                    // We launch a tiny thread to wait for the chat UI to finish closing
+                    Thread {
+                        Thread.sleep(50)
+                        mc.execute {
+                            // Instantiate ModScreen() as a class now
+                            mc.setScreen(ModScreen())
                         }
-                        1
-                    })
+                    }.start()
+                    1
+                })
             )
         }
     }
