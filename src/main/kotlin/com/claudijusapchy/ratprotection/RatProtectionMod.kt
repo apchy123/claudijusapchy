@@ -19,6 +19,7 @@ import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
 import com.claudijusapchy.ratprotection.features.ZoomFeature
 import com.mojang.authlib.minecraft.client.MinecraftClient
+import com.claudijusapchy.ratprotection.features.UbikCubeTracker
 
 object RatProtectionMod : ClientModInitializer {
 
@@ -81,7 +82,11 @@ object RatProtectionMod : ClientModInitializer {
         // ---- LAG TRACKER ----
         ClientReceiveMessageEvents.GAME.register { message, _ ->
             val text = message.string
+            if (text.contains("Motes in this match!")) {
+                UbikCubeTracker.onMatchCompleted()
+            }
             if (text.contains("Here, I found this map when I first entered the dungeon")) {
+
                 LagTracker.start()
             }
 
@@ -100,7 +105,14 @@ object RatProtectionMod : ClientModInitializer {
                 }
             }
             }
-        // ---------------------
+
+        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register { guiGraphics, _ ->
+            if (UbikCubeTracker.shouldShow()) {
+                val mc = Minecraft.getInstance()
+                guiGraphics.drawString(mc.font, "§aUbik Cube: Ready!", UbikCubeTracker.hudX, UbikCubeTracker.hudY, 0xFFFFFFFF.toInt(), true)
+            }
+        }
+
 
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(

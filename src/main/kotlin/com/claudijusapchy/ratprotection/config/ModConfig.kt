@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import net.fabricmc.loader.api.FabricLoader
 import java.io.File
+import com.claudijusapchy.ratprotection.features.UbikCubeTracker
 
 object ModConfig {
 
@@ -34,8 +35,12 @@ object ModConfig {
             PartyFinderRightClick.copyLeaderEnabled = json.get("copyLeaderEnabled")?.asBoolean ?: true
             PartyFinderRightClick.leavePartyEnabled = json.get("leavePartyEnabled")?.asBoolean ?: true
             copyLeaderKey = json.get("copyLeaderKey")?.asInt ?: -1
+            UbikCubeTracker.enabled = json.get("ubikEnabled")?.asBoolean ?: true
+            UbikCubeTracker.hudX = json.get("ubikHudX")?.asInt ?: 10
+            UbikCubeTracker.hudY = json.get("ubikHudY")?.asInt ?: 10
             leavePartyKey = json.get("leavePartyKey")?.asInt ?: -1
             zoomKey = json.get("zoomKey")?.asInt ?: -1
+            UbikCubeTracker.lastCompletedAt = json.get("ubikLastCompleted")?.asLong ?: 0L
             ZoomFeature.enabled = json.get("zoomEnabled")?.asBoolean ?: true
             val aliasObj = json.getAsJsonObject("aliases")
             aliasObj?.entrySet()?.forEach { entry ->
@@ -52,11 +57,15 @@ object ModConfig {
             val json = JsonObject()
             json.addProperty("shadowEnabled", TextShadowConfig.shadowEnabled)
             json.addProperty("partyFinderEnabled", PartyFinderRightClick.enabled)
+            json.addProperty("ubikLastCompleted", UbikCubeTracker.lastCompletedAt)
             json.addProperty("copyLeaderEnabled", PartyFinderRightClick.copyLeaderEnabled)
             json.addProperty("leavePartyEnabled", PartyFinderRightClick.leavePartyEnabled)
             json.addProperty("copyLeaderKey", copyLeaderKey)
             json.addProperty("leavePartyKey", leavePartyKey)
             json.addProperty("zoomKey", zoomKey)
+            json.addProperty("ubikEnabled", UbikCubeTracker.enabled)
+            json.addProperty("ubikHudX", UbikCubeTracker.hudX)
+            json.addProperty("ubikHudY", UbikCubeTracker.hudY)
             json.addProperty("zoomEnabled", ZoomFeature.enabled)
             val aliasObj = JsonObject()
             CommandAliases.aliases.forEach { (alias, cmd) ->

@@ -10,6 +10,7 @@ import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 import com.claudijusapchy.ratprotection.features.ZoomFeature
 import java.awt.Color
+import com.claudijusapchy.ratprotection.features.UbikCubeTracker
 
 class ModScreen : Screen(Component.literal("Rat Protection")) {
 
@@ -19,6 +20,10 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
         guiGraphics.fill(x, y, x + 1, y + height, color)
         guiGraphics.fill(x + width - 1, y, x + width, y + height, color)
     }
+    private var movingHud = false
+    private var hudDragOffsetX = 0
+    private var hudDragOffsetY = 0
+    private var isDraggingHud = false
 
     data class FeatureButton(
         val label: String,
@@ -72,6 +77,22 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                         ModConfig.save()
                     },
                     keybindKey = "leaveParty"
+                )
+            )
+        ),
+        FeatureButton(
+            label = "Ubik Cube",
+            isEnabled = { UbikCubeTracker.enabled },
+            toggle = {
+                UbikCubeTracker.enabled = !UbikCubeTracker.enabled
+                ModConfig.save()
+            },
+            column = 0, row = 4,
+            dropdownOptions = listOf(
+                DropdownOption(
+                    label = "Move HUD",
+                    isEnabled = { UbikCubeTracker.enabled },
+                    toggle = { movingHud = !movingHud }
                 )
             )
         ),
@@ -231,12 +252,36 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
             drawCenteredText(guiGraphics, msg, width / 2, height - 20, TEXT_COLOR)
         }
 
+        if (movingHud) {
+            val mc = minecraft!!
+            val text = "§aUbik Cube: Ready!"
+            val tw = mc.font.width("Ubik Cube: Ready!")
+            guiGraphics.fill(UbikCubeTracker.hudX - 2, UbikCubeTracker.hudY - 2, UbikCubeTracker.hudX + tw + 2, UbikCubeTracker.hudY + 11, 0x80000000.toInt())
+            guiGraphics.drawString(mc.font, text, UbikCubeTracker.hudX, UbikCubeTracker.hudY, 0xFFFFFFFF.toInt(), true)
+            val msg = "Click and drag to move. Right-click to confirm."
+            val mw = mc.font.width(msg)
+            guiGraphics.fill(width / 2 - mw / 2 - 6, height - 24, width / 2 + mw / 2 + 6, height - 8, 0xCC000000.toInt())
+            drawCenteredText(guiGraphics, msg, width / 2, height - 20, 0xFFFFFF)
+        }
+
         super.render(guiGraphics, mouseX, mouseY, delta)
     }
+
 
     override fun mouseClicked(event: MouseButtonEvent, bl: Boolean): Boolean {
         val mouseX = event.x.toInt()
         val mouseY = event.y.toInt()
+        if (movingHud && event.button() == 0) {
+            isDraggingHud = true
+            hudDragOffsetX = mouseX - UbikCubeTracker.hudX
+            hudDragOffsetY = mouseY - UbikCubeTracker.hudY
+            return true
+        }
+        if (movingHud && event.button() == 1) {
+            movingHud = false
+            ModConfig.save()
+            return true
+        }
 
         if (bindingMode) {
             val code = -(event.button() + 2)
@@ -283,6 +328,22 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
 
         openDropdown = null
         return super.mouseClicked(event, bl)
+    }
+    override fun mouseDragged(event: net.minecraft.client.input.MouseButtonEvent, d: Double, e: Double): Boolean {
+        if (isDraggingHud) {
+            val mouseX = event.x
+            val mouseY = event.y
+            UbikCubeTracker.hudX = (mouseX - hudDragOffsetX).toInt().coerceIn(0, width - 80)
+            UbikCubeTracker.hudY = (mouseY - hudDragOffsetY).toInt().coerceIn(0, height - 20)
+            ModConfig.save()
+            return true
+        }
+        return super.mouseDragged(event, d, e)
+    }
+
+    override fun mouseReleased(event: net.minecraft.client.input.MouseButtonEvent): Boolean {
+        if (event.button() == 0) isDraggingHud = false
+        return super.mouseReleased(event)
     }
 
     override fun keyPressed(event: KeyEvent): Boolean {
