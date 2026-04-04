@@ -10,7 +10,10 @@
     "ScrollMixin",
     "ZoomMixin",
     "PlayerTabOverlayMixin",
-    "ContainerScreenAccessor"
+    "ContainerScreenAccessor",
+    "JoinMultiplayerScreenMixin",
+    "MinecraftMixin",
+    "EarlyInitMixin"
   ],
   "injectors": {
     "defaultRequire": 1

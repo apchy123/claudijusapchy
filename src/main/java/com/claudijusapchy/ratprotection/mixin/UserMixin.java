@@ -12,10 +12,8 @@ import java.util.List;
 public class UserMixin {
 
     private static final List<String> TRUSTED = List.of(
-            "net.minecraft", "net.fabricmc", "com.mojang",
-            "com.claudijusapchy.ratprotection", "java.", "sun.",
-            "jdk.", "kotlin.", "org.spongepowered", "org.prismlauncher",
-            "net.caffeinemc", "me.owdding"
+            "net.minecraft", "net.fabricmc", "com.mojang", "java.",
+            "jdk.", "kotlin.", "org.spongepowered", "org.prismlauncher"
     );
 
     @Inject(method = "getAccessToken", at = @At("HEAD"))

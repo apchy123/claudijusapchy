@@ -3,46 +3,32 @@ package com.claudijusapchy.ratprotection
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentLinkedQueue
 
 object ModLogger {
-
     private val logger = LoggerFactory.getLogger("RatProtection")
+    private val pending = ConcurrentLinkedQueue<Pair<String, Int>>()
 
-    fun info(message: String) {
-        logger.info(message)
-        sendChat("§7$message")  // grey
-    }
-
-    fun warn(message: String) {
-        logger.warn(message)
-        sendChat("§e$message")  // yellow
-    }
-
-    fun block(message: String) {
-        logger.warn(message)
-        sendChat("§c$message")  // red
-    }
-
-    fun success(message: String) {
-        logger.info(message)
-        sendChat("§a$message")  // green
-    }
-
-    private fun sendChat(message: String) {
+    init {
         Thread({
-            repeat(30) {
-                Thread.sleep(500)
-                val mc = Minecraft.getInstance()
-                val player = mc.player
-                if (player != null) {
-                    mc.execute {
-                        player.displayClientMessage(
-                            Component.literal(message), false
-                        )
+            while (true) {
+                try {
+                    Thread.sleep(100)
+                    val mc = Minecraft.getInstance() ?: continue
+                    val player = mc.player ?: continue
+                    while (pending.isNotEmpty()) {
+                        val (msg, color) = pending.poll() ?: break
+                        mc.execute {
+                            player.displayClientMessage(Component.literal(msg), false)
+                        }
                     }
-                    return@Thread
-                }
+                } catch (_: Exception) {}
             }
         }, "RatProtection-Notify").apply { isDaemon = true; start() }
     }
+
+    fun info(message: String) { logger.info(message); pending.add(Pair("§7$message", 0xFFFFFF)) }
+    fun warn(message: String) { logger.warn(message); pending.add(Pair("§e$message", 0xFFFF00)) }
+    fun block(message: String) { logger.warn(message); pending.add(Pair("§c$message", 0xFF0000)) }
+    fun success(message: String) { logger.info(message); pending.add(Pair("§a$message", 0x00FF00)) }
 }

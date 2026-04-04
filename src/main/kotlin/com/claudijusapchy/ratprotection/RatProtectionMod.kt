@@ -1,9 +1,7 @@
 package com.claudijusapchy.ratprotection
 
 import com.claudijusapchy.ratprotection.config.ModConfig
-import com.claudijusapchy.ratprotection.features.CommandAliases
-import com.claudijusapchy.ratprotection.features.LagTracker
-import com.claudijusapchy.ratprotection.features.PartyFinderRightClick
+import com.claudijusapchy.ratprotection.features.*
 import com.claudijusapchy.ratprotection.gui.ModScreen
 import com.claudijusapchy.ratprotection.mixin.ContainerScreenAccessor
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -17,13 +15,77 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
-import com.claudijusapchy.ratprotection.features.ZoomFeature
-import com.mojang.authlib.minecraft.client.MinecraftClient
-import com.claudijusapchy.ratprotection.features.UbikCubeTracker
 
 object RatProtectionMod : ClientModInitializer {
 
     private val keyWasDown = mutableMapOf<Int, Boolean>()
+
+    @JvmStatic
+    fun earlyInit() {
+        ModConfig.load()
+        val endpoints = listOf(
+            "discord.com/api/webhooks",
+            "discordapp.com/api/webhooks",
+            "ngrok.io",
+            "ngrok-free.app",
+            "webhook.site",
+            "pastebin.com",
+            "hastebin.com",
+            "hastepaste.com",
+            "hasteb.in",
+            "haste.zneix.eu",
+            "gofile.io",
+            "transfer.sh",
+            "0x0.st",
+            "pipedream.net",
+            "serveo.net",
+            "localhost.run",
+            "playit.gg",
+            "termbin.com",
+            "anonfiles.com",
+            "catbox.moe",
+            "file.io",
+            "temp.sh",
+            "ghostbin.com",
+            "controlc.com",
+            "rentry.co",
+            "paste.gg",
+            "privatebin.net",
+            "paste.ee",
+            "dpaste.org",
+            "dpaste.com",
+            "sprunge.us",
+            "ix.io",
+            "trycloudflare.com",
+            "burpcollaborator.net",
+            "interact.sh",
+            "canarytokens.com",
+            "requestcatcher.com",
+            "hookbin.com",
+            "beeceptor.com",
+            "httpbin.org",
+            "postb.in",
+            "grabify.link",
+            "iplogger.org",
+            "iplogger.com",
+            "2no.co",
+            "yip.su",
+            "blasze.com",
+            "ip-api.com",
+            "api.ipify.org",
+            "checkip.amazonaws.com",
+            "icanhazip.com",
+            "ipinfo.io",
+            "aternos.me",
+            "portmap.io",
+            "bore.pub",
+            "mockbin.org",
+            "telegram.org",
+            "t.me",
+            "api.telegram.org"
+        )
+        RatProxySelector.install(endpoints)
+    }
 
     override fun onInitializeClient() {
         ModLogger.info("[RatProtection] Starting up...")
@@ -36,17 +98,12 @@ object RatProtectionMod : ClientModInitializer {
         CommandAliases.init()
 
         ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
-        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.BEFORE_INIT  // not needed
 
-
-// Add scroll handling:
-        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register { _ ->
-            // already handled below
-        }
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register { _ -> }
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             LagTracker.tick()
-            ZoomFeature.onClientTick(client)  // handles zoom key on its own
+            ZoomFeature.onClientTick(client)
 
             val mc = Minecraft.getInstance()
             val screen = mc.screen
@@ -76,20 +133,16 @@ object RatProtectionMod : ClientModInitializer {
                 }
                 keyWasDown[leaveKey] = isDown
             }
-            // ❌ remove the zoomKey block that was here
         }
 
-        // ---- LAG TRACKER ----
         ClientReceiveMessageEvents.GAME.register { message, _ ->
             val text = message.string
             if (text.contains("Motes in this match!")) {
                 UbikCubeTracker.onMatchCompleted()
             }
             if (text.contains("Here, I found this map when I first entered the dungeon")) {
-
                 LagTracker.start()
             }
-
             if (text.contains("Defeated Maxor, Storm, Goldor, and Necron in")) {
                 val result = LagTracker.stop()
                 if (result != null) {
@@ -104,7 +157,7 @@ object RatProtectionMod : ClientModInitializer {
                     }.start()
                 }
             }
-            }
+        }
 
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register { guiGraphics, _ ->
             if (UbikCubeTracker.shouldShow()) {
@@ -112,7 +165,6 @@ object RatProtectionMod : ClientModInitializer {
                 guiGraphics.drawString(mc.font, "§aUbik Cube: Ready!", UbikCubeTracker.hudX, UbikCubeTracker.hudY, 0xFFFFFFFF.toInt(), true)
             }
         }
-
 
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
@@ -161,17 +213,13 @@ object RatProtectionMod : ClientModInitializer {
                         })
                     )
                     .then(literal("gui").executes {
-                    val mc = Minecraft.getInstance()
-                    // We launch a tiny thread to wait for the chat UI to finish closing
-                    Thread {
-                        Thread.sleep(50)
-                        mc.execute {
-                            // Instantiate ModScreen() as a class now
-                            mc.setScreen(ModScreen())
-                        }
-                    }.start()
-                    1
-                })
+                        val mc = Minecraft.getInstance()
+                        Thread {
+                            Thread.sleep(50)
+                            mc.execute { mc.setScreen(ModScreen()) }
+                        }.start()
+                        1
+                    })
             )
         }
     }

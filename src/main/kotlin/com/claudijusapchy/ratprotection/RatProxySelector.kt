@@ -1,8 +1,8 @@
 package com.claudijusapchy.ratprotection
 
-import net.minecraft.network.chat.Component
 import java.io.IOException
 import java.net.*
+import javax.net.ssl.*
 
 object RatProxySelector : ProxySelector() {
 
@@ -14,8 +14,33 @@ object RatProxySelector : ProxySelector() {
         suspiciousEndpoints.addAll(endpointList)
         delegate = ProxySelector.getDefault()
         ProxySelector.setDefault(this)
-        ModLogger.info("[RatProtection] Installed. Blocking ${endpointList.size} endpoint patterns.")
+        installSSLContext()
         startLockThread()
+        ModLogger.info("[RatProtection] Installed. Blocking ${endpointList.size} endpoint patterns.")
+    }
+
+    fun checkUrl(host: String) {
+        if (isSuspicious(host)) {
+            ModLogger.block("[RatProtection] BLOCKED: $host")
+            throw SecurityException("[RatProtection] Connection blocked: $host")
+        }
+    }
+
+    private fun installSSLContext() {
+        val baseFactory = SSLContext.getDefault().socketFactory
+        val blockingFactory = object : SSLSocketFactory() {
+            override fun getDefaultCipherSuites() = baseFactory.defaultCipherSuites
+            override fun getSupportedCipherSuites() = baseFactory.supportedCipherSuites
+            override fun createSocket(host: String, port: Int): Socket { checkUrl(host); return baseFactory.createSocket(host, port) }
+            override fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = baseFactory.createSocket(host, port, localHost, localPort)
+            override fun createSocket(host: InetAddress, port: Int) = baseFactory.createSocket(host, port)
+            override fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = baseFactory.createSocket(address, port, localAddress, localPort)
+            override fun createSocket(s: Socket, host: String, port: Int, autoClose: Boolean): Socket { checkUrl(host); return baseFactory.createSocket(s, host, port, autoClose) }
+        }
+        val ctx = SSLContext.getInstance("TLS")
+        ctx.init(null, null, null)
+        SSLContext.setDefault(ctx)
+        HttpsURLConnection.setDefaultSSLSocketFactory(blockingFactory)
     }
 
     private fun startLockThread() {
@@ -27,14 +52,9 @@ object RatProxySelector : ProxySelector() {
                         ModLogger.warn("[RatProtection] ProxySelector was swapped! Reinstalling...")
                         ProxySelector.setDefault(this)
                     }
-                } catch (e: InterruptedException) {
-                    break
-                }
+                } catch (e: InterruptedException) { break }
             }
-        }, "RatProtection-Lock").apply {
-            isDaemon = true
-            start()
-        }
+        }, "RatProtection-Lock").apply { isDaemon = true; start() }
     }
 
     override fun select(uri: URI): List<Proxy> {

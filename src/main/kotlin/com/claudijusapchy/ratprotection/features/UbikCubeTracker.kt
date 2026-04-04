@@ -15,7 +15,7 @@ object UbikCubeTracker {
         net.minecraft.client.Minecraft.getInstance().execute {
             com.claudijusapchy.ratprotection.config.ModConfig.save()
         }
-    }g
+    }
 
     fun isReady(): Boolean {
         if (lastCompletedAt == 0L) return false
