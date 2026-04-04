@@ -2,12 +2,15 @@
   "required": true,
   "package": "com.claudijusapchy.ratprotection.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [
-    "UserMixin",
-    "TextShadowMixin",
-    "ContainerScreenAccessor",
+  "mixins": [
     "ContainerScreenMixin",
-    "PacketCounterMixin"
+    "PacketCounterMixin",
+    "TextShadowMixin",
+    "UserMixin",
+    "ScrollMixin",
+    "ZoomMixin",
+    "PlayerTabOverlayMixin",
+    "ContainerScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

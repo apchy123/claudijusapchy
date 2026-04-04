@@ -1,28 +1,29 @@
 package com.claudijusapchy.ratprotection.features
 
 object LagTracker {
-    private var startTime = 0L
-    private var packetCount = 0
+    private var totalLagMs = 0L
+    private var lastPacketTime = 0L
     private var tracking = false
 
     fun start() {
-        startTime = System.currentTimeMillis()
-        packetCount = 0
+        totalLagMs = 0L
+        lastPacketTime = System.currentTimeMillis()
         tracking = true
     }
 
     fun countPacket() {
-        if (tracking) packetCount++
+        if (!tracking) return
+        val now = System.currentTimeMillis()
+        val diff = now - lastPacketTime
+        val expected = 500L
+        if (diff > expected) totalLagMs += (diff - expected)
+        lastPacketTime = now
     }
-
-    fun tick() {} // keep this so RatProtectionMod.kt doesn't break
+    fun tick() {}
 
     fun stop(): String? {
         if (!tracking) return null
         tracking = false
-        val realSeconds = (System.currentTimeMillis() - startTime) / 1000.0
-        val packetSeconds = packetCount / 20.0
-        val lag = (realSeconds - packetSeconds).coerceAtLeast(0.0)
-        return "§8[§6Lag§8] §f%.2fs §7lost to server lag in boss".format(lag)
+        return "§8[§6CA§8] §f%.2fs §7lost to server lag this run".format(totalLagMs / 1000.0)
     }
 }

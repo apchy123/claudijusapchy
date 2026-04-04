@@ -17,6 +17,8 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
+import com.claudijusapchy.ratprotection.features.ZoomFeature
+import com.mojang.authlib.minecraft.client.MinecraftClient
 
 object RatProtectionMod : ClientModInitializer {
 
@@ -31,10 +33,20 @@ object RatProtectionMod : ClientModInitializer {
         AuthEndpointSpammer.start()
         PartyFinderRightClick.init()
         CommandAliases.init()
-        ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
 
-        ClientTickEvents.END_CLIENT_TICK.register { _ ->
+        ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.BEFORE_INIT  // not needed
+
+
+// Add scroll handling:
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register { _ ->
+            // already handled below
+        }
+
+        ClientTickEvents.END_CLIENT_TICK.register { client ->
             LagTracker.tick()
+            ZoomFeature.onClientTick(client)  // handles zoom key on its own
+
             val mc = Minecraft.getInstance()
             val screen = mc.screen
             if (screen !is AbstractContainerScreen<*>) return@register
@@ -63,12 +75,13 @@ object RatProtectionMod : ClientModInitializer {
                 }
                 keyWasDown[leaveKey] = isDown
             }
+            // ❌ remove the zoomKey block that was here
         }
 
         // ---- LAG TRACKER ----
         ClientReceiveMessageEvents.GAME.register { message, _ ->
             val text = message.string
-            if (text.contains("WELL! WELL! WELL! LOOK WHO'S HERE!")) {
+            if (text.contains("Here, I found this map when I first entered the dungeon")) {
                 LagTracker.start()
             }
 
@@ -84,16 +97,9 @@ object RatProtectionMod : ClientModInitializer {
                             chat.addMessage(Component.literal("§8§m                                        "))
                         }
                     }.start()
-
-
-                    val mc = Minecraft.getInstance()
-                    mc.gui.chat.addMessage(Component.literal("§8§m                                        "))
-                    mc.gui.chat.addMessage(Component.literal(result))
-                    mc.gui.chat.addMessage(Component.literal("§8§m                                        "))
-
                 }
             }
-        }
+            }
         // ---------------------
 
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->

@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
+import com.claudijusapchy.ratprotection.features.ZoomFeature
 import java.awt.Color
 
 class ModScreen : Screen(Component.literal("Rat Protection")) {
@@ -79,6 +80,23 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
             isEnabled = { true },
             toggle = {},
             column = 0, row = 2
+        ),
+        FeatureButton(
+            label = "Zoom",
+            isEnabled = { ZoomFeature.enabled },
+            toggle = {
+                ZoomFeature.enabled = !ZoomFeature.enabled
+                ModConfig.save()
+            },
+            column = 0, row = 3,
+            dropdownOptions = listOf(
+                DropdownOption(
+                    label = "Zoom Key",
+                    isEnabled = { ZoomFeature.enabled },
+                    toggle = {},
+                    keybindKey = "zoom"
+                )
+            )
         )
     )
 
@@ -112,12 +130,14 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
     private fun getKeybindValue(key: String): Int = when (key) {
         "copyLeader" -> ModConfig.copyLeaderKey
         "leaveParty" -> ModConfig.leavePartyKey
+        "zoom" -> ModConfig.zoomKey
         else -> -1
     }
 
     private fun setKeybindValue(key: String, value: Int) {
         when (key) {
             "copyLeader" -> ModConfig.copyLeaderKey = value
+            "zoom" -> ModConfig.zoomKey = value
             "leaveParty" -> ModConfig.leavePartyKey = value
         }
         ModConfig.save()

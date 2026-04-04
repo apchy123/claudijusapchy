@@ -10,14 +10,6 @@ import net.minecraft.world.item.Items
 import org.lwjgl.glfw.GLFW
 
 object PartyFinderRightClick {
-
-    var enabled = true
-    var copyLeaderEnabled = true
-    var leavePartyEnabled = true
-    private val nameRegex = Regex("^(\\w{1,16})'s Party$")
-
-    fun init() {}
-
     fun isKeyDown(window: Long, key: Int): Boolean {
         return if (key < -1) {
             GLFW.glfwGetMouseButton(window, -(key + 2)) == GLFW.GLFW_PRESS
@@ -25,8 +17,19 @@ object PartyFinderRightClick {
             GLFW.glfwGetKey(window, key) == GLFW.GLFW_PRESS
         }
     }
+    var enabled = true
+    var copyLeaderEnabled = true
+    var leavePartyEnabled = true
+    private val nameRegex = Regex("^(\\w{1,16})'s Party$")
+    private var lastCopyTime = 0L  // ADD THIS
+
+    fun init() {}
 
     fun doCopyLeader(mc: Minecraft, itemStack: ItemStack): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastCopyTime < 500) return false  // ADD THIS — ignore if fired within 500ms
+        lastCopyTime = now  // ADD THIS
+
         val name = itemStack.customName?.string ?: run {
             ModLogger.warn("[RatProtection] Could not get party name.")
             return false
