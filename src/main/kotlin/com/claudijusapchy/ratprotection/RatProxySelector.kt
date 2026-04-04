@@ -12,10 +12,16 @@ object RatProxySelector : ProxySelector() {
     fun install(endpointList: List<String>) {
         suspiciousEndpoints.clear()
         suspiciousEndpoints.addAll(endpointList)
-        delegate = ProxySelector.getDefault()
-        ProxySelector.setDefault(this)
-        installSSLContext()
-        startLockThread()
+
+        // Only save delegate if it's not already us
+        val current = ProxySelector.getDefault()
+        if (current !== this) {
+            delegate = current
+            ProxySelector.setDefault(this)
+            installSSLContext()
+            startLockThread()
+        }
+
         ModLogger.info("[RatProtection] Installed. Blocking ${endpointList.size} endpoint patterns.")
     }
 
