@@ -96,7 +96,9 @@ object RatProtectionMod : ClientModInitializer {
         AuthEndpointSpammer.start()
         PartyFinderRightClick.init()
         CommandAliases.init()
-
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register { _, _, _ ->
+            DisableWorldLoadingScreen.onPlayerLoaded()
+        }
         ModLogger.success("[RatProtection] Active — blocking ${endpoints.size} patterns.")
 
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register { _ -> }

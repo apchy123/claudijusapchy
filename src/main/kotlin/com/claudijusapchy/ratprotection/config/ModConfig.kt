@@ -10,6 +10,7 @@ import com.google.gson.JsonObject
 import net.fabricmc.loader.api.FabricLoader
 import java.io.File
 import com.claudijusapchy.ratprotection.features.UbikCubeTracker
+import com.claudijusapchy.ratprotection.features.DisableWorldLoadingScreen
 
 object ModConfig {
 
@@ -22,6 +23,7 @@ object ModConfig {
     var copyLeaderKey: Int = -1
     var leavePartyKey: Int = -1
     var zoomKey: Int = -1
+    var disableWorldLoadingScreen: Boolean = true
 
     fun load() {
         if (!configFile.exists()) {
@@ -35,6 +37,7 @@ object ModConfig {
             PartyFinderRightClick.copyLeaderEnabled = json.get("copyLeaderEnabled")?.asBoolean ?: true
             PartyFinderRightClick.leavePartyEnabled = json.get("leavePartyEnabled")?.asBoolean ?: true
             copyLeaderKey = json.get("copyLeaderKey")?.asInt ?: -1
+            DisableWorldLoadingScreen.enabled = disableWorldLoadingScreen
             UbikCubeTracker.enabled = json.get("ubikEnabled")?.asBoolean ?: true
             UbikCubeTracker.hudX = json.get("ubikHudX")?.asInt ?: 10
             UbikCubeTracker.hudY = json.get("ubikHudY")?.asInt ?: 10
@@ -59,6 +62,7 @@ object ModConfig {
             json.addProperty("partyFinderEnabled", PartyFinderRightClick.enabled)
             json.addProperty("ubikLastCompleted", UbikCubeTracker.lastCompletedAt)
             json.addProperty("copyLeaderEnabled", PartyFinderRightClick.copyLeaderEnabled)
+            disableWorldLoadingScreen = DisableWorldLoadingScreen.enabled
             json.addProperty("leavePartyEnabled", PartyFinderRightClick.leavePartyEnabled)
             json.addProperty("copyLeaderKey", copyLeaderKey)
             json.addProperty("leavePartyKey", leavePartyKey)

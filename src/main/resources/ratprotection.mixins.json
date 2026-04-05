@@ -13,7 +13,9 @@
     "ContainerScreenAccessor",
     "JoinMultiplayerScreenMixin",
     "MinecraftMixin",
-    "EarlyInitMixin"
+    "EarlyInitMixin",
+    "SetScreenMixin",
+    "LevelLoadingScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

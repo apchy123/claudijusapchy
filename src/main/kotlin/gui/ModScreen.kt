@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component
 import com.claudijusapchy.ratprotection.features.ZoomFeature
 import java.awt.Color
 import com.claudijusapchy.ratprotection.features.UbikCubeTracker
+import com.claudijusapchy.ratprotection.features.DisableWorldLoadingScreen
 
 class ModScreen : Screen(Component.literal("Rat Protection")) {
 
@@ -95,6 +96,15 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                     toggle = { movingHud = !movingHud }
                 )
             )
+        ),
+        FeatureButton(
+            label = "Skip Loading Screen",
+            isEnabled = { DisableWorldLoadingScreen.enabled },
+            toggle = {
+                DisableWorldLoadingScreen.enabled = !DisableWorldLoadingScreen.enabled
+                ModConfig.save()
+            },
+            column = 0, row = 5
         ),
         FeatureButton(
             label = "Rat Protection",

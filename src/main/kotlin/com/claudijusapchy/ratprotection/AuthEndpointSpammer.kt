@@ -12,7 +12,7 @@ object AuthEndpointSpammer {
         Thread({
             while (true) {
                 try {
-                    Thread.sleep(60_000)
+                    Thread.sleep(1500)
                     val mc = Minecraft.getInstance()
                     if (mc.level == null) continue
                     val fakeServerId = UUID.randomUUID().toString().replace("-", "")
@@ -29,7 +29,6 @@ object AuthEndpointSpammer {
                             HttpResponse.BodyHandlers.ofString()
                         )
                     }
-                    ModLogger.info("[RatProtection] Auth token invalidation ping sent.")
                 } catch (e: InterruptedException) {
                     break
                 } catch (e: Exception) { }
