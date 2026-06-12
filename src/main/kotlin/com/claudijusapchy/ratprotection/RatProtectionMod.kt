@@ -15,7 +15,8 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
-
+import com.claudijusapchy.ratprotection.features.FeatureManager
+import com.claudijusapchy.ratprotection.skyblock.background.ItemBackgroundManager
 object RatProtectionMod : ClientModInitializer {
 
     private val keyWasDown = mutableMapOf<Int, Boolean>()
@@ -23,6 +24,7 @@ object RatProtectionMod : ClientModInitializer {
     @JvmStatic
     fun earlyInit() {
         ModConfig.load()
+        FeatureManager.init()
         val endpoints = listOf(
             "discord.com/api/webhooks",
             "discordapp.com/api/webhooks",
@@ -90,11 +92,15 @@ object RatProtectionMod : ClientModInitializer {
     override fun onInitializeClient() {
         ModLogger.info("[RatProtection] Starting up...")
         ModConfig.load()
+        SkyblockUtils.init()
+        ItemBackgroundManager.init()
+        FeatureManager.init()
 
         val endpoints = loadEndpoints()
         RatProxySelector.install(endpoints)
         AuthEndpointSpammer.start()
         PartyFinderRightClick.init()
+        SecretTracker.initialize()
         CommandAliases.init()
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register { _, _, _ ->
             DisableWorldLoadingScreen.onPlayerLoaded()
@@ -139,6 +145,20 @@ object RatProtectionMod : ClientModInitializer {
 
         ClientReceiveMessageEvents.GAME.register { message, _ ->
             val text = message.string
+            if (PartyJoinSoundFeature.partyJoinSoundEnabled && PartyJoinSoundFeature.isPartyJoinMessage(text)) {
+                val mc = Minecraft.getInstance()
+                val player = mc.player
+                val level = mc.level
+                if (player != null && level != null) {
+                    level.playSound(
+                        player,
+                        player.blockPosition(),
+                        net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING.value(),
+                        net.minecraft.sounds.SoundSource.PLAYERS,
+                        2.0f, 1.0f
+                    )
+                }
+            }
             if (text.contains("Motes in this match!")) {
                 UbikCubeTracker.onMatchCompleted()
             }

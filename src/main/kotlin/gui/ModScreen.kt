@@ -12,6 +12,8 @@ import com.claudijusapchy.ratprotection.features.ZoomFeature
 import java.awt.Color
 import com.claudijusapchy.ratprotection.features.UbikCubeTracker
 import com.claudijusapchy.ratprotection.features.DisableWorldLoadingScreen
+import com.claudijusapchy.ratprotection.features.SecretTracker
+import com.claudijusapchy.ratprotection.features.PartyJoinSoundFeature
 
 class ModScreen : Screen(Component.literal("Rat Protection")) {
 
@@ -21,7 +23,8 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
         guiGraphics.fill(x, y, x + 1, y + height, color)
         guiGraphics.fill(x + width - 1, y, x + width, y + height, color)
     }
-    private var movingHud = false
+
+    private var movingHud: String? = null // "ubik" or "secrets"
     private var hudDragOffsetX = 0
     private var hudDragOffsetY = 0
     private var isDraggingHud = false
@@ -39,7 +42,8 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
         val label: String,
         val isEnabled: () -> Boolean,
         val toggle: () -> Unit,
-        val keybindKey: String? = null
+        val keybindKey: String? = null,
+        val dynamicLabel: (() -> String)? = null
     )
 
     private val features = listOf(
@@ -51,6 +55,15 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                 ModConfig.save()
             },
             column = 0, row = 0
+        ),
+        FeatureButton(
+            label = "Party Join Sound",
+            isEnabled = { PartyJoinSoundFeature.partyJoinSoundEnabled },
+            toggle = {
+                PartyJoinSoundFeature.partyJoinSoundEnabled = !PartyJoinSoundFeature.partyJoinSoundEnabled
+                ModConfig.save()
+            },
+            column = 0, row = 7
         ),
         FeatureButton(
             label = "Party Finder",
@@ -93,7 +106,7 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                 DropdownOption(
                     label = "Move HUD",
                     isEnabled = { UbikCubeTracker.enabled },
-                    toggle = { movingHud = !movingHud }
+                    toggle = { movingHud = "ubik" }
                 )
             )
         ),
@@ -128,6 +141,68 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                     keybindKey = "zoom"
                 )
             )
+        ),
+        FeatureButton(
+            label = "Rarity Backgrounds",
+            isEnabled = { ModConfig.itemRarityBackgrounds },
+            toggle = {
+                ModConfig.itemRarityBackgrounds = !ModConfig.itemRarityBackgrounds
+                ModConfig.save()
+            },
+            column = 0, row = 8,
+            dropdownOptions = listOf(
+                DropdownOption(
+                    label = "Style: Square",
+                    dynamicLabel = { "Style: ${if (ModConfig.itemBackgroundStyleSquare) "Square" else "Circle"}" },
+                    isEnabled = { ModConfig.itemRarityBackgrounds },
+                    toggle = {
+                        ModConfig.itemBackgroundStyleSquare = !ModConfig.itemBackgroundStyleSquare
+                        ModConfig.save()
+                    }
+                ),
+                DropdownOption(
+                    label = "Opacity +",
+                    isEnabled = { ModConfig.itemRarityBackgrounds },
+                    toggle = {
+                        ModConfig.itemBackgroundOpacity = (ModConfig.itemBackgroundOpacity + 0.1f).coerceAtMost(1.0f)
+                        ModConfig.save()
+                    }
+                ),
+                DropdownOption(
+                    label = "Opacity -",
+                    isEnabled = { ModConfig.itemRarityBackgrounds },
+                    toggle = {
+                        ModConfig.itemBackgroundOpacity = (ModConfig.itemBackgroundOpacity - 0.1f).coerceAtLeast(0.0f)
+                        ModConfig.save()
+                    }
+                )
+            )
+        ),
+        FeatureButton(
+            label = "Secret Tracker",
+            isEnabled = { SecretTracker.enabled },
+            toggle = {
+                SecretTracker.enabled = !SecretTracker.enabled
+                ModConfig.save()
+            },
+            column = 0, row = 6,
+            dropdownOptions = listOf(
+                DropdownOption(
+                    label = "Move HUD",
+                    isEnabled = { SecretTracker.enabled },
+                    toggle = { movingHud = "secrets" },
+                ),
+                DropdownOption(
+                    label = "Scale +",
+                    isEnabled = { SecretTracker.enabled },
+                    toggle = { SecretTracker.scale = (SecretTracker.scale + 0.25f).coerceAtMost(4.0f); ModConfig.save() }
+                ),
+                DropdownOption(
+                    label = "Scale -",
+                    isEnabled = { SecretTracker.enabled },
+                    toggle = { SecretTracker.scale = (SecretTracker.scale - 0.25f).coerceAtLeast(0.5f); ModConfig.save() }
+                )
+            )
         )
     )
 
@@ -139,7 +214,6 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
         private const val COLUMN_START_X = 20
         private const val COLUMN_START_Y = 20
 
-        // Colors - using Long to avoid Int overflow/transparency issues in 1.21.1
         private const val ENABLED_COLOR = 0xFF0078D7.toInt()
         private const val DISABLED_COLOR = 0xFF3C3C3C.toInt()
         private const val HEADER_COLOR = 0xF0141414.toInt()
@@ -197,7 +271,6 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
-        // Draw standard darkened background
         guiGraphics.fill(0, 0, width, height, 0x90000000.toInt())
 
         hoveredButton = null
@@ -238,7 +311,7 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
                         }
                         guiGraphics.fill(x, dropY, x + COLUMN_WIDTH, dropY + BUTTON_HEIGHT, dropColor)
                         renderOutline(guiGraphics, x, dropY, COLUMN_WIDTH, BUTTON_HEIGHT, BORDER_COLOR)
-                        drawCenteredText(guiGraphics, option.label, x + COLUMN_WIDTH / 2, dropY + 6, TEXT_COLOR)
+                        drawCenteredText(guiGraphics, option.dynamicLabel?.invoke() ?: option.label, x + COLUMN_WIDTH / 2, dropY + 6, TEXT_COLOR)
 
                         if (option.keybindKey != null) {
                             val keyBtnX = x + COLUMN_WIDTH + 4
@@ -262,33 +335,58 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
             drawCenteredText(guiGraphics, msg, width / 2, height - 20, TEXT_COLOR)
         }
 
-        if (movingHud) {
+        if (movingHud != null) {
             val mc = minecraft!!
-            val text = "§aUbik Cube: Ready!"
-            val tw = mc.font.width("Ubik Cube: Ready!")
-            guiGraphics.fill(UbikCubeTracker.hudX - 2, UbikCubeTracker.hudY - 2, UbikCubeTracker.hudX + tw + 2, UbikCubeTracker.hudY + 11, 0x80000000.toInt())
-            guiGraphics.drawString(mc.font, text, UbikCubeTracker.hudX, UbikCubeTracker.hudY, 0xFFFFFFFF.toInt(), true)
-            val msg = "Click and drag to move. Right-click to confirm."
+
+            if (movingHud == "ubik") {
+                val text = "§aUbik Cube: Ready!"
+                val tw = mc.font.width("Ubik Cube: Ready!")
+                guiGraphics.fill(UbikCubeTracker.hudX - 2, UbikCubeTracker.hudY - 2, UbikCubeTracker.hudX + tw + 2, UbikCubeTracker.hudY + 11, 0x80000000.toInt())
+                guiGraphics.drawString(mc.font, text, UbikCubeTracker.hudX, UbikCubeTracker.hudY, 0xFFFFFFFF.toInt(), true)
+            }
+
+            if (movingHud == "secrets") {
+                val pose = guiGraphics.pose()
+                pose.pushMatrix()
+                pose.translate(SecretTracker.hudX.toFloat(), SecretTracker.hudY.toFloat())
+                pose.scale(SecretTracker.scale, SecretTracker.scale)
+                guiGraphics.drawString(mc.font, "3", 0, 0, 0xFFAAAAAA.toInt(), true)
+                val slashX = mc.font.width("3")
+                guiGraphics.drawString(mc.font, "/", slashX, 0, 0xFFFFFFFF.toInt(), true)
+                val totalX = slashX + mc.font.width("/")
+                guiGraphics.drawString(mc.font, "4", totalX, 0, 0xFF55FF55.toInt(), true)
+                pose.popMatrix()
+            }
+
+            val msg = "Click and drag to move. Right-click to confirm. Scroll to resize."
             val mw = mc.font.width(msg)
             guiGraphics.fill(width / 2 - mw / 2 - 6, height - 24, width / 2 + mw / 2 + 6, height - 8, 0xCC000000.toInt())
             drawCenteredText(guiGraphics, msg, width / 2, height - 20, 0xFFFFFF)
         }
-
-        super.render(guiGraphics, mouseX, mouseY, delta)
     }
-
 
     override fun mouseClicked(event: MouseButtonEvent, bl: Boolean): Boolean {
         val mouseX = event.x.toInt()
         val mouseY = event.y.toInt()
-        if (movingHud && event.button() == 0) {
+
+        if (movingHud != null && event.button() == 0) {
             isDraggingHud = true
-            hudDragOffsetX = mouseX - UbikCubeTracker.hudX
-            hudDragOffsetY = mouseY - UbikCubeTracker.hudY
+            val hx = when (movingHud) {
+                "ubik" -> UbikCubeTracker.hudX
+                "secrets" -> SecretTracker.hudX
+                else -> 0
+            }
+            val hy = when (movingHud) {
+                "ubik" -> UbikCubeTracker.hudY
+                "secrets" -> SecretTracker.hudY
+                else -> 0
+            }
+            hudDragOffsetX = mouseX - hx
+            hudDragOffsetY = mouseY - hy
             return true
         }
-        if (movingHud && event.button() == 1) {
-            movingHud = false
+        if (movingHud != null && event.button() == 1) {
+            movingHud = null
             ModConfig.save()
             return true
         }
@@ -339,12 +437,21 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
         openDropdown = null
         return super.mouseClicked(event, bl)
     }
+
     override fun mouseDragged(event: net.minecraft.client.input.MouseButtonEvent, d: Double, e: Double): Boolean {
-        if (isDraggingHud) {
+        if (isDraggingHud && movingHud != null) {
             val mouseX = event.x
             val mouseY = event.y
-            UbikCubeTracker.hudX = (mouseX - hudDragOffsetX).toInt().coerceIn(0, width - 80)
-            UbikCubeTracker.hudY = (mouseY - hudDragOffsetY).toInt().coerceIn(0, height - 20)
+            when (movingHud) {
+                "ubik" -> {
+                    UbikCubeTracker.hudX = (mouseX - hudDragOffsetX).toInt().coerceIn(0, width - 80)
+                    UbikCubeTracker.hudY = (mouseY - hudDragOffsetY).toInt().coerceIn(0, height - 20)
+                }
+                "secrets" -> {
+                    SecretTracker.hudX = (mouseX - hudDragOffsetX).toInt().coerceIn(0, width - 80)
+                    SecretTracker.hudY = (mouseY - hudDragOffsetY).toInt().coerceIn(0, height - 20)
+                }
+            }
             ModConfig.save()
             return true
         }
@@ -376,7 +483,6 @@ class ModScreen : Screen(Component.literal("Rat Protection")) {
 
     private fun drawCenteredText(guiGraphics: GuiGraphics, text: String, x: Int, y: Int, color: Int) {
         val textWidth = minecraft!!.font.width(text)
-        // No PoseStack, No matrix errors, No unresolved references.
         guiGraphics.drawString(minecraft!!.font, text, x - textWidth / 2, y, color, false)
     }
 }

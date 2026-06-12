@@ -3,7 +3,9 @@ package com.claudijusapchy.ratprotection.config
 import com.claudijusapchy.ratprotection.ModLogger
 import com.claudijusapchy.ratprotection.TextShadowConfig
 import com.claudijusapchy.ratprotection.features.CommandAliases
+import com.claudijusapchy.ratprotection.features.SecretTracker
 import com.claudijusapchy.ratprotection.features.PartyFinderRightClick
+import com.claudijusapchy.ratprotection.features.PartyJoinSoundFeature
 import com.claudijusapchy.ratprotection.features.ZoomFeature
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -24,6 +26,9 @@ object ModConfig {
     var leavePartyKey: Int = -1
     var zoomKey: Int = -1
     var disableWorldLoadingScreen: Boolean = true
+    var itemRarityBackgrounds: Boolean = true
+    var itemBackgroundOpacity: Float = 0.5f
+    var itemBackgroundStyleSquare: Boolean = true
 
     fun load() {
         if (!configFile.exists()) {
@@ -33,14 +38,23 @@ object ModConfig {
         runCatching {
             val json = gson.fromJson(configFile.readText(), JsonObject::class.java)
             TextShadowConfig.shadowEnabled = json.get("shadowEnabled")?.asBoolean ?: true
+            SecretTracker.scale = json.get("secretTrackerScale")?.asFloat ?: 1.0f
             PartyFinderRightClick.enabled = json.get("partyFinderEnabled")?.asBoolean ?: true
+            SecretTracker.enabled = json.get("secretTrackerEnabled")?.asBoolean ?: true
+            SecretTracker.hudX = json.get("secretTrackerHudX")?.asInt ?: 10
+            itemRarityBackgrounds = json.get("itemRarityBackgrounds")?.asBoolean ?: true
+            itemBackgroundOpacity = json.get("itemBackgroundOpacity")?.asFloat ?: 0.5f
+            itemBackgroundStyleSquare = json.get("itemBackgroundStyleSquare")?.asBoolean ?: true
+            SecretTracker.hudY = json.get("secretTrackerHudY")?.asInt ?: 40
             PartyFinderRightClick.copyLeaderEnabled = json.get("copyLeaderEnabled")?.asBoolean ?: true
             PartyFinderRightClick.leavePartyEnabled = json.get("leavePartyEnabled")?.asBoolean ?: true
             copyLeaderKey = json.get("copyLeaderKey")?.asInt ?: -1
             DisableWorldLoadingScreen.enabled = disableWorldLoadingScreen
+
             UbikCubeTracker.enabled = json.get("ubikEnabled")?.asBoolean ?: true
             UbikCubeTracker.hudX = json.get("ubikHudX")?.asInt ?: 10
             UbikCubeTracker.hudY = json.get("ubikHudY")?.asInt ?: 10
+            PartyJoinSoundFeature.partyJoinSoundEnabled = json.get("partyJoinSound")?.asBoolean ?: true
             leavePartyKey = json.get("leavePartyKey")?.asInt ?: -1
             zoomKey = json.get("zoomKey")?.asInt ?: -1
             UbikCubeTracker.lastCompletedAt = json.get("ubikLastCompleted")?.asLong ?: 0L
@@ -63,6 +77,14 @@ object ModConfig {
             json.addProperty("ubikLastCompleted", UbikCubeTracker.lastCompletedAt)
             json.addProperty("copyLeaderEnabled", PartyFinderRightClick.copyLeaderEnabled)
             disableWorldLoadingScreen = DisableWorldLoadingScreen.enabled
+            json.addProperty("secretTrackerScale", SecretTracker.scale)
+            json.addProperty("itemRarityBackgrounds", itemRarityBackgrounds)
+            json.addProperty("itemBackgroundOpacity", itemBackgroundOpacity)
+            json.addProperty("itemBackgroundStyleSquare", itemBackgroundStyleSquare)
+            json.addProperty("secretTrackerEnabled", SecretTracker.enabled)
+            json.addProperty("partyJoinSound", PartyJoinSoundFeature.partyJoinSoundEnabled)
+            json.addProperty("secretTrackerHudX", SecretTracker.hudX)
+            json.addProperty("secretTrackerHudY", SecretTracker.hudY)
             json.addProperty("leavePartyEnabled", PartyFinderRightClick.leavePartyEnabled)
             json.addProperty("copyLeaderKey", copyLeaderKey)
             json.addProperty("leavePartyKey", leavePartyKey)

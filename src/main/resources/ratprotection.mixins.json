@@ -13,9 +13,13 @@
     "ContainerScreenAccessor",
     "JoinMultiplayerScreenMixin",
     "MinecraftMixin",
+    "ChatHudMixin",
     "EarlyInitMixin",
+    "HotbarRenderMixin",
     "SetScreenMixin",
-    "LevelLoadingScreenAccessor"
+    "LevelLoadingScreenAccessor",
+    "ScaledHudMixin",
+    "ContainerScreenRenderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

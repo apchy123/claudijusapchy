@@ -1,4 +1,3 @@
-package events.impl
+package com.claudijusapchy.ratprotection.events.impl
 
-class ChatReceivedEvent {
-}
+class ChatReceivedEvent(val strippedMessage: String)
